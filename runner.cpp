@@ -16,7 +16,7 @@ using namespace easyvk;
  *  device cannot be found, the first device is used.
  */
 Device getDevice(Instance &instance, int device_id) {
-  int idx = 4;
+  int idx = 0;
   int j = 0;
   auto physicalDevices = instance.physicalDevices();
 //  for (auto physicalDevice : physicalDevices) {
@@ -155,8 +155,7 @@ void run(string &shader_file, string &result_shader_file, map<string, int> param
   // initialize settings
   auto instance = Instance(enable_validation_layers);
   auto device = getDevice(instance, device_id);
-  int workgroupSize = setBetween(params["minWorkgroupSize"], params["maxWorkgroupSize"]);
-  int testingThreads = workgroupSize * params["testingWorkgroups"];
+  int testingThreads = params["workgroupSize"] * params["testingWorkgroups"];
   int testLocSize = testingThreads * params["memStride"];
 
   // set up buffers
@@ -214,8 +213,8 @@ void run(string &shader_file, string &result_shader_file, map<string, int> param
 
     program.setWorkgroups(numWorkgroups);
     resultProgram.setWorkgroups(params["testingWorkgroups"]);
-    program.setWorkgroupSize(workgroupSize);
-    resultProgram.setWorkgroupSize(workgroupSize);
+    program.setWorkgroupSize(params["workgroupSize"]);
+    resultProgram.setWorkgroupSize(params["workgroupSize"]);
 
     // workgroup memory shaders use workgroup memory for testing
     if (params["workgroupMemory"] == 1) {
@@ -229,11 +228,9 @@ void run(string &shader_file, string &result_shader_file, map<string, int> param
     resultProgram.run();
 
     cout << "Iteration " << i << "\n";
-    cout << "Read results[0]: " << readResults.load<uint32_t>(0) << "\n";
-
-    cout << "Read results[1]: " << readResults.load<uint32_t>(1) << "\n";
-    cout << "Read results[2]: " << readResults.load<uint32_t>(2) << "\n";
-
+    for (int i = 0; i < testingThreads; i++) {
+      cout << "flag: " << readResults.load<uint32_t>(i*3) << " r0: " << readResults.load<uint32_t>(i*3 + 1) << " r1: " << readResults.load<uint32_t>(i*3 + 2) << "\n";
+    }
     cout << "Not bounded: " << testResults.load<uint32_t>(0) << "\n";
     cout << "Bounded: " << testResults.load<uint32_t>(1) << "\n";
     cout << "\n";

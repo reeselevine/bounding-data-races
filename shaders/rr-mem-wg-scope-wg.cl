@@ -42,14 +42,19 @@ static void do_stress(__global uint* scratchpad, __global uint* scratch_location
 }
 
 __kernel void run_test (
-  __local uint* wg_non_atomic_test_locations,
-  __local atomic_uint* wg_atomic_test_locations,
   __global atomic_uint* read_results,
   __global uint* shuffled_workgroups,
-  __global atomic_uint* barrier,
+  __global atomic_uint* _barrier,
   __global uint* scratchpad,
   __global uint* scratch_locations,
-  __global uint* stress_params) { 
+  __global uint* stress_params,
+  __local uint* wg_non_atomic_test_locations,
+  __local atomic_uint* wg_atomic_test_locations) { 
+
+  wg_non_atomic_test_locations[get_local_id(0)] = 0; // local memory is not zero initialized by default
+  atomic_store_explicit(&wg_atomic_test_locations[get_local_id(0)], 0, memory_order_relaxed);
+
+  barrier(CLK_LOCAL_MEM_FENCE); // ensure all threads in the workgroup see zero initialized memory
 
   uint shuffled_workgroup = shuffled_workgroups[get_group_id(0)];
   if(shuffled_workgroup < stress_params[9]) {
@@ -63,7 +68,7 @@ __kernel void run_test (
       do_stress(scratchpad, scratch_locations, stress_params[5], stress_params[6]);
     }
     if (stress_params[0]) {
-      spin(barrier, get_local_size(0));
+      spin(_barrier, get_local_size(0));
     }
     // Thread 0
     wg_non_atomic_test_locations[x_0] = 1;
@@ -71,14 +76,14 @@ __kernel void run_test (
 
     // Thread 1
     wg_non_atomic_test_locations[x_1] = 2;
-    uint r0 = atomic_load_explicit(&wg_atomic_test_locations[x_1], memory_order_acquire);
-    uint r1 = wg_non_atomic_test_locations[x_1];
-    uint r2 = wg_non_atomic_test_locations[y_1]; 
+    uint flag = atomic_load_explicit(&wg_atomic_test_locations[x_1], memory_order_acquire);
+    uint r0 = wg_non_atomic_test_locations[x_1];
+    uint r1 = wg_non_atomic_test_locations[y_1]; 
 
     // Store back results for analysis
-    atomic_store(&read_results[shuffled_workgroup * get_local_size(0) + id_1 * 3 + 2], r2);
-    atomic_store(&read_results[shuffled_workgroup * get_local_size(0) + id_1 * 3 + 1], r1);
-    atomic_store(&read_results[shuffled_workgroup * get_local_size(0) + id_1 * 3], r0);
+    atomic_store(&read_results[(shuffled_workgroup * get_local_size(0) + id_1) * 3 + 2], r1);
+    atomic_store(&read_results[(shuffled_workgroup * get_local_size(0) + id_1) * 3 + 1], r0);
+    atomic_store(&read_results[(shuffled_workgroup * get_local_size(0) + id_1) * 3], flag);
   } else if (stress_params[1]) {
     do_stress(scratchpad, scratch_locations, stress_params[2], stress_params[3]);
   }

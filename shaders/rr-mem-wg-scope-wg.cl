@@ -41,20 +41,15 @@ static void do_stress(__global uint* scratchpad, __global uint* scratch_location
   }
 }
 
-__kernel void main (
-  __global uint* non_atomic_test_locations,
-  __global uint* atomic_test_locations,
+__kernel void run_test (
+  __local uint* wg_non_atomic_test_locations,
+  __local atomic_uint* wg_atomic_test_locations,
   __global atomic_uint* read_results,
   __global uint* shuffled_workgroups,
   __global atomic_uint* barrier,
   __global uint* scratchpad,
   __global uint* scratch_locations,
   __global uint* stress_params) { 
-
-  // data races will occur on these locations
-  __local uint* wg_non_atomic_test_locations[3584];
-  // used to perform synchronization between threads
-  __local uint* wg_atomic_test_locations[3584];
 
   uint shuffled_workgroup = shuffled_workgroups[get_group_id(0)];
   if(shuffled_workgroup < stress_params[9]) {
@@ -76,7 +71,7 @@ __kernel void main (
 
     // Thread 1
     wg_non_atomic_test_locations[x_1] = 2;
-    uint r0 = atomic_load_explicit(&wg_atomic_test_locations[x_1], 1, memory_order_acquire);
+    uint r0 = atomic_load_explicit(&wg_atomic_test_locations[x_1], memory_order_acquire);
     uint r1 = wg_non_atomic_test_locations[x_1];
     uint r2 = wg_non_atomic_test_locations[y_1]; 
 

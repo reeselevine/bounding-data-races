@@ -2,9 +2,11 @@ CXX = g++
 CXXFLAGS = -std=c++17
 CLSPVFLAGS = -cl-std=CL2.0 -inline-entry-points
 
+SHADERS = $(patsubst %.cl,%.spv,$(wildcard shaders/*.cl))
+
 .PHONY: clean easyvk
 
-all: build easyvk runner
+all: build easyvk runner $(SHADERS)
 
 build:
 	mkdir -p build
@@ -15,8 +17,8 @@ clean:
 easyvk: easyvk/src/easyvk.cpp easyvk/src/easyvk.h
 	$(CXX) $(CXXFLAGS) -Ieasyvk/src -c easyvk/src/easyvk.cpp -o build/easyvk.o
 
-kernel: runner.cpp 
+runner: runner.cpp 
 	$(CXX) $(CXXFLAGS) -Ieasyvk/src build/easyvk.o runner.cpp -lvulkan -o build/runner
 
 %.spv: %.cl
-	clspv -w -cl-std=CL2.0 -inline-entry-points $< -o build/$@
+	clspv -w -cl-std=CL2.0 -inline-entry-points $< -o build/$(notdir $@)

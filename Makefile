@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -std=c++17
 CLSPVFLAGS = -cl-std=CL2.0 -inline-entry-points
 
-SHADERS = $(patsubst %.cl,%.spv,$(wildcard shaders/*.cl))
+SHADERS = $(patsubst %.cl,%.spv,$(wildcard shaders/*/*.cl))
 
 .PHONY: clean easyvk
 

@@ -1,0 +1,5 @@
+numOutputs=3
+aliasedMemory=1
+permuteLocation=1
+workgroupMemory=1
+checkMemory=0

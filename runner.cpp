@@ -19,14 +19,16 @@ Device getDevice(Instance &instance, int device_id) {
   int idx = 0;
   int j = 0;
   auto physicalDevices = instance.physicalDevices();
-//  for (auto physicalDevice : physicalDevices) {
-//    Device _device = Device(instance, physicalDevice);
-//    if (_device.properties.deviceID == device_id) {
-//      idx = j;
-//      break;
-//    }
-//    j++;
-//  }
+  for (auto physicalDevice : physicalDevices) {
+    Device _device = Device(instance, physicalDevice);
+    if (_device.properties.deviceID == device_id) {
+      idx = j;
+      _device.teardown();
+      break;
+    }
+    _device.teardown();
+    j++;
+  }
   Device device = Device(instance, physicalDevices.at(idx));
   cout << "Using device " << device.properties.deviceName << "\n";
   return device;
@@ -175,7 +177,7 @@ void run(string &shader_file, string &result_shader_file, map<string, int> stres
   auto readResults = Buffer(device, test_params["numOutputs"] * testingThreads, sizeof(uint32_t));
   buffers.push_back(readResults);
   resultBuffers.push_back(readResults);
-  auto testResults = Buffer(device, 2, sizeof(uint32_t));
+  auto testResults = Buffer(device, test_params["numResults"], sizeof(uint32_t));
   resultBuffers.push_back(testResults);
   auto shuffledWorkgroups = Buffer(device, stress_params["maxWorkgroups"], sizeof(uint32_t));
   buffers.push_back(shuffledWorkgroups);
@@ -204,7 +206,7 @@ void run(string &shader_file, string &result_shader_file, map<string, int> stres
     if (!test_params["workgroupMemory"] == 1) {
       clearMemory(buffers[1], testLocSize); // atomic test locations will be the second buffer
     }
-    clearMemory(testResults, 2);
+    clearMemory(testResults, test_params["numResults"]);
     clearMemory(barrier, 1);
     clearMemory(scratchpad, stress_params["scratchMemorySize"]);
     setShuffledWorkgroups(shuffledWorkgroups, numWorkgroups, stress_params["shufflePct"]);
@@ -228,12 +230,21 @@ void run(string &shader_file, string &result_shader_file, map<string, int> stres
     resultProgram.run();
 
     cout << "Iteration " << i << "\n";
-    for (int i = 0; i < testingThreads; i++) {
-      cout << "flag: " << readResults.load<uint32_t>(i*3) << " r0: " << readResults.load<uint32_t>(i*3 + 1) << " r1: " << readResults.load<uint32_t>(i*3 + 2) << "\n";
-    }
-    cout << "Not bounded: " << testResults.load<uint32_t>(0) << "\n";
-    cout << "Bounded: " << testResults.load<uint32_t>(1) << "\n";
-    cout << "\n";
+    cout << "flag=1, r0=2, r1=2 (seq): " << testResults.load<uint32_t>(0) << "\n";
+    cout << "flag=0, r0=2, r1=2 (seq): " << testResults.load<uint32_t>(1) << "\n";
+    cout << "flag=1, r0=1, r1=1 (interleaved): " << testResults.load<uint32_t>(2) << "\n";
+    cout << "flag=0, r0=1, r1=1 (interleaved): " << testResults.load<uint32_t>(3) << "\n";
+    cout << "flag=0, r0=2, r1=1 (racy): " << testResults.load<uint32_t>(4) << "\n";
+    cout << "flag=0, r0=1, r1=2 (racy): " << testResults.load<uint32_t>(5) << "\n";
+    cout << "flag=1, r0=2, r1=1 (not bound): " << testResults.load<uint32_t>(6) << "\n";
+    cout << "flag=1, r0=1, r1=2 (not bound): " << testResults.load<uint32_t>(7) << "\n";
+    cout << "Other/error: " << testResults.load<uint32_t>(8) << "\n\n";
+
+//    for (int i = 0; i < testingThreads; i++) {
+//      if (readResults.load<uint32_t>(i*3 + 1) != readResults.load<uint32_t>(i*3 + 2))
+//        cout << "i: " << i <<  " flag: " << readResults.load<uint32_t>(i*3) << " r0: " << readResults.load<uint32_t>(i*3 + 1) << " r1: " << readResults.load<uint32_t>(i*3 + 2) << "\n";
+//    }
+
     program.teardown();
     resultProgram.teardown();
   }
@@ -279,7 +290,7 @@ int main(int argc, char *argv[])
   bool list_devices = false;
   
   int c;
-  while ((c = getopt(argc, argv, "vcls:r:p:t:")) != -1)
+  while ((c = getopt(argc, argv, "vcls:r:p:t:d:")) != -1)
     switch (c)
     {
     case 's':
@@ -339,10 +350,10 @@ int main(int argc, char *argv[])
   srand(time(NULL));
   map<string, int> stressParams = read_config(stressParamsFile);
   map<string, int> testParams = read_config(testParamsFile);
-  for (const auto& [key, value] : stressParams) {
-    std::cout << key << " = " << value << "; ";
-  }
-  std::cout << "\n";
+//  for (const auto& [key, value] : stressParams) {
+//    std::cout << key << " = " << value << "; ";
+//  }
+//  std::cout << "\n";
   run(shaderFile, resultShaderFile, stressParams, testParams, deviceID, enableValidationLayers);
   return 0;
 }

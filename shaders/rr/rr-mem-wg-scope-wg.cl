@@ -42,17 +42,17 @@ static void do_stress(__global uint* scratchpad, __global uint* scratch_location
 }
 
 __kernel void run_test (
+  __local uint* wg_non_atomic_test_locations,
+  __local atomic_uint* wg_atomic_test_locations,
   __global atomic_uint* read_results,
   __global uint* shuffled_workgroups,
   __global atomic_uint* _barrier,
   __global uint* scratchpad,
   __global uint* scratch_locations,
-  __global uint* stress_params,
-  __local uint* wg_non_atomic_test_locations,
-  __local atomic_uint* wg_atomic_test_locations) { 
+  __global uint* stress_params) {
 
-  wg_non_atomic_test_locations[get_local_id(0)] = 0; // local memory is not zero initialized by default
-  atomic_store_explicit(&wg_atomic_test_locations[get_local_id(0)], 0, memory_order_relaxed);
+  wg_non_atomic_test_locations[get_local_id(0) * stress_params[10]] = 0; // local memory is not zero initialized by default
+  atomic_store_explicit(&wg_atomic_test_locations[get_local_id(0) * stress_params[10]], 0, memory_order_relaxed);
 
   barrier(CLK_LOCAL_MEM_FENCE); // ensure all threads in the workgroup see zero initialized memory
 

@@ -67,18 +67,19 @@ __kernel void run_test (
     }
     // Thread 0
     non_atomic_test_locations[x_0] = 1;
-    atomic_store_explicit(&atomic_test_locations[x_0], 1, memory_order_release);
+    atomic_store_explicit(&atomic_test_locations[x_0], 1, memory_order_release, memory_scope_work_group);
 
     // Thread 1
     non_atomic_test_locations[x_1] = 2;
-    uint flag = atomic_load_explicit(&atomic_test_locations[x_1], memory_order_acquire);
+    uint flag = atomic_load_explicit(&atomic_test_locations[x_1], memory_order_acquire, memory_scope_work_group);
     uint r0 = non_atomic_test_locations[x_1];
     uint r1 = non_atomic_test_locations[y_1]; 
 
     // Store back results for analysis
-    atomic_store(&read_results[(shuffled_workgroup * get_local_size(0) + id_1) * 3 + 2], r1);
-    atomic_store(&read_results[(shuffled_workgroup * get_local_size(0) + id_1) * 3 + 1], r0);
     atomic_store(&read_results[(shuffled_workgroup * get_local_size(0) + id_1) * 3], flag);
+    atomic_store(&read_results[(shuffled_workgroup * get_local_size(0) + id_1) * 3 + 1], r0);
+    atomic_store(&read_results[(shuffled_workgroup * get_local_size(0) + id_1) * 3 + 2], r1);
+
   } else if (stress_params[1]) {
     do_stress(scratchpad, scratch_locations, stress_params[2], stress_params[3]);
   }

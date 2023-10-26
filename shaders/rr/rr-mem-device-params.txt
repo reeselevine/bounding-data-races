@@ -1,6 +1,5 @@
 numOutputs=3
 numResults=9
-aliasedMemory=1
 permuteLocation=1
 workgroupMemory=0
 checkMemory=0

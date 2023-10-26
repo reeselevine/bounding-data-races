@@ -63,7 +63,7 @@ __kernel void run_test (
     uint id_1 = permute_id(get_local_id(0), stress_params[7], get_local_size(0));
     uint x_0 = (id_0) * stress_params[10]; // used to write to the racy location and write the flag (thread 0)
     uint x_1 = (id_1) * stress_params[10]; // used to write to the racy location, read the flag, first read of racy location (thread 1)
-    uint y_1 = (permute_id(id_1, stress_params[8], total_ids)) * stress_params[10] + stress_params[11]; // aliased second read of racy location (thread 1)
+    uint y_1 = (permute_id(id_1, stress_params[8], total_ids)) * stress_params[10]; // aliased second read of racy location (thread 1)
     if (stress_params[4]) {
       do_stress(scratchpad, scratch_locations, stress_params[5], stress_params[6]);
     }

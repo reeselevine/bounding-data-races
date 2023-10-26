@@ -135,11 +135,6 @@ void setStaticStressParams(Buffer &stressParams, map<string, int> stress_params,
   stressParams.store<uint32_t>(8, test_params["permuteLocation"]);
   stressParams.store<uint32_t>(9, stress_params["testingWorkgroups"]);
   stressParams.store<uint32_t>(10, stress_params["memStride"]);
-  if (test_params["aliasedMemory"] == 1) {
-    stressParams.store<uint32_t>(11, 0);
-  } else {
-    stressParams.store<uint32_t>(11, stress_params["memStride"]);
-  }
 }
 
 /** Returns a value between the min and max. */
@@ -188,7 +183,7 @@ void run(string test_name, string &shader_file, string &result_shader_file, map<
   buffers.push_back(scratchpad);
   auto scratchLocations = Buffer(device, stress_params["maxWorkgroups"], sizeof(uint32_t));
   buffers.push_back(scratchLocations);
-  auto stressParams = Buffer(device, 12, sizeof(uint32_t));
+  auto stressParams = Buffer(device, 11, sizeof(uint32_t));
   setStaticStressParams(stressParams, stress_params, test_params);
   buffers.push_back(stressParams);
   resultBuffers.push_back(stressParams);

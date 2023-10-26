@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
   int deviceID = 0;
   bool enableValidationLayers = false;
   bool list_devices = false;
-  
+
   int c;
   while ((c = getopt(argc, argv, "vcls:r:p:t:d:")) != -1)
     switch (c)
@@ -303,6 +303,7 @@ int main(int argc, char *argv[])
       stressParamsFile = optarg;
     case 't':
       testParamsFile = optarg;
+      break;
     case 'v':
       enableValidationLayers = true;
       break;

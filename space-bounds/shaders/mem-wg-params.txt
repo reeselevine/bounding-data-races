@@ -1,0 +1,3 @@
+numResults=5
+permuteLocation=32
+workgroupMemory=1

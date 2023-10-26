@@ -159,20 +159,13 @@ void run(string test_name, string &shader_file, string &result_shader_file, map<
   // set up buffers
   vector<Buffer> buffers;
   vector<Buffer> resultBuffers;
-  if (!test_params["workgroupMemory"] == 1 || test_params["checkMemory"] == 1) { // test shader needs a non atomic buffer for device buffers, or if we need to save workgroup memory
-    auto nonAtomicTestLocations = Buffer(device, testLocSize, sizeof(uint32_t));
-    buffers.push_back(nonAtomicTestLocations);
-    if (test_params["checkMemory"] == 1) { // result shader only needs these locations if we need to check memory
-      resultBuffers.push_back(nonAtomicTestLocations);
-    }
-  }
-  if (!test_params["workgroupMemory"] == 1) { // test shader needs an atomic buffer only if it's not workgroup memory
-    buffers.push_back(Buffer(device, testLocSize, sizeof(uint32_t))); // atomic test locations
-  }
 
-  auto readResults = Buffer(device, test_params["numOutputs"] * testingThreads, sizeof(uint32_t));
-  buffers.push_back(readResults);
-  resultBuffers.push_back(readResults);
+  auto xLocations = Buffer(device, testLocSize, sizeof(uint32_t));
+  buffers.push_back(xLocations);
+  resultBuffers.push_back(xLocations);
+  auto yLocations = Buffer(device, testLocSize, sizeof(uint32_t));
+  buffers.push_back(yLocations);
+  resultBuffers.push_back(yLocations);
   auto testResults = Buffer(device, test_params["numResults"], sizeof(uint32_t));
   resultBuffers.push_back(testResults);
   auto shuffledWorkgroups = Buffer(device, stress_params["maxWorkgroups"], sizeof(uint32_t));
@@ -196,12 +189,8 @@ void run(string test_name, string &shader_file, string &result_shader_file, map<
     auto resultProgram = Program(device, result_shader_file.c_str(), resultBuffers);
 
     int numWorkgroups = setBetween(stress_params["testingWorkgroups"], stress_params["maxWorkgroups"]);
-    if (!test_params["workgroupMemory"] == 1 || test_params["checkMemory"] == 1) {
-      clearMemory(buffers[0], testLocSize); // non-atomic test locations will be the first buffer
-    }
-    if (!test_params["workgroupMemory"] == 1) {
-      clearMemory(buffers[1], testLocSize); // atomic test locations will be the second buffer
-    }
+    clearMemory(xLocations, testLocSize);
+    clearMemory(yLocations, testLocSize);
     clearMemory(testResults, test_params["numResults"]);
     clearMemory(barrier, 1);
     clearMemory(scratchpad, stress_params["scratchMemorySize"]);
@@ -227,16 +216,16 @@ void run(string test_name, string &shader_file, string &result_shader_file, map<
 
 
     cout << "Iteration " << i << "\n";
+
+//    for (int i = 0; i < testLocSize; i++) {
+//      cout << "x[" << i << "]: " << xLocations.load<uint32_t>(i) << " y[" << i << "]: " << yLocations.load<uint32_t>(i) << "\n";
+//    }
+
     vector<uint32_t> results;
     for (int i = 0; i < test_params["numResults"]; i++) {
       results.push_back(testResults.load<uint32_t>(i));
     }
     check_results(results, test_name);
-
-//    for (int i = 0; i < testingThreads; i++) {
-//      if (readResults.load<uint32_t>(i*3 + 1) != readResults.load<uint32_t>(i*3 + 2))
-//        cout << "i: " << i <<  " flag: " << readResults.load<uint32_t>(i*3) << " r0: " << readResults.load<uint32_t>(i*3 + 1) << " r1: " << readResults.load<uint32_t>(i*3 + 2) << "\n";
-//    }
 
     program.teardown();
     resultProgram.teardown();
@@ -298,6 +287,7 @@ int main(int argc, char *argv[])
       break;
     case 'p':
       stressParamsFile = optarg;
+      break;
     case 't':
       testParamsFile = optarg;
       break;

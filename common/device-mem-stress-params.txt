@@ -1,5 +1,5 @@
-testIterations=1
-testingWorkgroups=256
+testIterations=10
+testingWorkgroups=621
 maxWorkgroups=1024
 workgroupSize=256
 shufflePct=100

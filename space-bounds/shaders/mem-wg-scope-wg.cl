@@ -42,9 +42,10 @@ static void do_stress(__global uint* scratchpad, __global uint* scratch_location
 }
 
 __kernel void run_test (
-  __global uint* y_locations,
   __global uint* x_locations,
-  __global atomic_uint* read_results,
+  __global uint* y_locations,
+  __local uint* wg_x_locations,
+  __local uint* wg_y_locations,
   __global uint* shuffled_workgroups,
   __global atomic_uint* _barrier,
   __global uint* scratchpad,
@@ -65,14 +66,18 @@ __kernel void run_test (
     if (stress_params[0]) {
       spin(_barrier, get_local_size(0));
     }
-    // Thread 0
-    uint a = 32;
-    x_locations[x_0] = a + 10;
-    // do a bunch of stuff
-    y_locations[y_0] = a + 10;
 
     // Thread 1
-    x_locations[x_1] = 1;
+    wg_x_locations[x_1] = 1;
+
+    // Thread 0
+    uint a = stress_params[8];
+    wg_x_locations[x_0] = a + 10;
+    // try some stuff out
+    wg_y_locations[y_0] = a + 10;
+
+    x_locations[(shuffled_workgroup * get_local_size(0) + id_0) * stress_params[10]] = wg_x_locations[x_0];
+    y_locations[(shuffled_workgroup * get_local_size(0) + id_0) * stress_params[10]] = wg_y_locations[y_0];
   } else if (stress_params[1]) {
     do_stress(scratchpad, scratch_locations, stress_params[2], stress_params[3]);
   }

@@ -7,6 +7,7 @@
 #include <chrono>
 #include <easyvk.h>
 #include <unistd.h>
+#include "checker.h"
 
 using namespace std;
 using namespace easyvk;
@@ -152,7 +153,7 @@ int setBetween(int min, int max) {
 }
 
 /** A test consists of N iterations of a shader and its corresponding result shader. */
-void run(string &shader_file, string &result_shader_file, map<string, int> stress_params, map<string, int> test_params, int device_id, bool enable_validation_layers)
+void run(string test_name, string &shader_file, string &result_shader_file, map<string, int> stress_params, map<string, int> test_params, int device_id, bool enable_validation_layers)
 {
   // initialize settings
   auto instance = Instance(enable_validation_layers);
@@ -229,16 +230,13 @@ void run(string &shader_file, string &result_shader_file, map<string, int> stres
     resultProgram.initialize("check_results");
     resultProgram.run();
 
+
     cout << "Iteration " << i << "\n";
-    cout << "flag=1, r0=2, r1=2 (seq): " << testResults.load<uint32_t>(0) << "\n";
-    cout << "flag=0, r0=2, r1=2 (seq): " << testResults.load<uint32_t>(1) << "\n";
-    cout << "flag=1, r0=1, r1=1 (interleaved): " << testResults.load<uint32_t>(2) << "\n";
-    cout << "flag=0, r0=1, r1=1 (interleaved): " << testResults.load<uint32_t>(3) << "\n";
-    cout << "flag=0, r0=2, r1=1 (racy): " << testResults.load<uint32_t>(4) << "\n";
-    cout << "flag=0, r0=1, r1=2 (racy): " << testResults.load<uint32_t>(5) << "\n";
-    cout << "flag=1, r0=2, r1=1 (not bound): " << testResults.load<uint32_t>(6) << "\n";
-    cout << "flag=1, r0=1, r1=2 (not bound): " << testResults.load<uint32_t>(7) << "\n";
-    cout << "Other/error: " << testResults.load<uint32_t>(8) << "\n\n";
+    vector<uint32_t> results;
+    for (int i = 0; i < test_params["numResults"]; i++) {
+      results.push_back(testResults.load<uint32_t>(i));
+    }
+    check_results(results, test_name);
 
 //    for (int i = 0; i < testingThreads; i++) {
 //      if (readResults.load<uint32_t>(i*3 + 1) != readResults.load<uint32_t>(i*3 + 2))
@@ -285,14 +283,18 @@ int main(int argc, char *argv[])
   string resultShaderFile;
   string stressParamsFile;
   string testParamsFile;
+  string testName;
   int deviceID = 0;
   bool enableValidationLayers = false;
   bool list_devices = false;
 
   int c;
-  while ((c = getopt(argc, argv, "vcls:r:p:t:d:")) != -1)
+  while ((c = getopt(argc, argv, "vcls:r:p:t:d:n:")) != -1)
     switch (c)
     {
+    case 'n':
+      testName = optarg;
+      break;
     case 's':
       shaderFile = optarg;
       break;
@@ -328,6 +330,11 @@ int main(int argc, char *argv[])
     return 0;
   }
 
+  if (testName.empty()) {
+    std::cerr << "Test name (-n) must be set\n";
+    return 1;
+  }    
+
   if (shaderFile.empty()) {
     std::cerr << "Shader (-s) must be set\n";
     return 1;
@@ -355,6 +362,6 @@ int main(int argc, char *argv[])
 //    std::cout << key << " = " << value << "; ";
 //  }
 //  std::cout << "\n";
-  run(shaderFile, resultShaderFile, stressParams, testParams, deviceID, enableValidationLayers);
+  run(testName, shaderFile, resultShaderFile, stressParams, testParams, deviceID, enableValidationLayers);
   return 0;
 }

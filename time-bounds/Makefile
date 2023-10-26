@@ -14,11 +14,11 @@ build:
 clean:
 	rm -r build
 
-easyvk: easyvk/src/easyvk.cpp easyvk/src/easyvk.h
-	$(CXX) $(CXXFLAGS) -Ieasyvk/src -c easyvk/src/easyvk.cpp -o build/easyvk.o
+easyvk: ../easyvk/src/easyvk.cpp ../easyvk/src/easyvk.h
+	$(CXX) $(CXXFLAGS) -I../easyvk/src -c ../easyvk/src/easyvk.cpp -o build/easyvk.o
 
 runner: runner.cpp 
-	$(CXX) $(CXXFLAGS) -Ieasyvk/src build/easyvk.o runner.cpp -lvulkan -o build/runner
+	$(CXX) $(CXXFLAGS) -I../easyvk/src build/easyvk.o runner.cpp -lvulkan -o build/runner
 
 %.spv: %.cl
 	clspv -w -cl-std=CL2.0 -inline-entry-points $< -o build/$(notdir $@)

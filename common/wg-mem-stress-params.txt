@@ -1,4 +1,4 @@
-testIterations=1
+testIterations=10
 testingWorkgroups=4
 maxWorkgroups=1024
 workgroupSize=128

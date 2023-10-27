@@ -238,8 +238,7 @@ void run(string test_name, string &shader_file, string &result_shader_file, map<
     violationsDetected = check_results(results, test_name) || violationsDetected;
 
 //    for (int i = 0; i < testingThreads; i++) {
-//      if (readResults.load<uint32_t>(i*3 + 1) != readResults.load<uint32_t>(i*3 + 2))
-//        cout << "i: " << i <<  " flag: " << readResults.load<uint32_t>(i*2) << " r0: " << readResults.load<uint32_t>(i*2 + 1) << " mem: " << buffers[0].load<uint32_t>(i*stress_params["memStride"]) << "\n";
+//      cout << "i: " << i <<  " flag: " << readResults.load<uint32_t>(i*2) << " r0: " << readResults.load<uint32_t>(i*2 + 1) << " mem: " << buffers[0].load<uint32_t>(i*stress_params["memStride"]) << "\n";
 //    }
 
     program.teardown();

@@ -26,11 +26,23 @@ bool check_rw(vector<uint32_t> results) {
   return results[6] > 0 || results[7] > 0 || results[8] > 0;
 }
 
+bool check_wr(vector<uint32_t> results) {
+  cout << "flag=1, r0=3, mem=3 (seq): " << results[0] << "\n";
+  cout << "flag=0, r0=3, mem=1 (seq): " << results[1] << "\n";
+  cout << "flag=0, r0=1, mem=1 (interleaved): " << results[2] << "\n";
+  cout << "flag=0, r0=3, mem=3 (interleaved): " << results[3] << "\n";
+  cout << "flag=1, r0=1, mem=1 (not bound): " << results[4] << "\n";
+  cout << "Other/error: " << results[5] << "\n\n";
+  return results[4] > 0 || results[5] > 0;
+}
+
 bool check_results(vector<uint32_t> results, string test_name) {
   if (test_name == "rr") {
     return check_rr(results);
   } else if (test_name == "rw") {
     return check_rw(results);
+  } else if (test_name == "wr") {
+    return check_wr(results);
   }
   return false;
 }

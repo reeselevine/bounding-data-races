@@ -16,7 +16,7 @@ function random_config() {
   local workgroupLimiter=$1
   local workgroupSizeLimiter=$2
 
-  echo "testIterations=100" > $PARAM_FILE
+  echo "testIterations=200" > $PARAM_FILE
   local testingWorkgroups=$(random_between 2 $workgroupLimiter)
   echo "testingWorkgroups=$testingWorkgroups" >> $PARAM_FILE
   local maxWorkgroups=$(random_between $testingWorkgroups $workgroupLimiter)
@@ -41,9 +41,31 @@ function random_config() {
   echo "permuteThread=419" >> $PARAM_FILE
 }
 
+if [ $# != 1 ] ; then
+  echo "Need to pass device index as first argument"
+  exit 1
+fi
+
+device_idx=$1
+
+if [ ! -d results ] ; then
+  mkdir results
+fi
+
 random_config 1024 256
 
-mkdir results
+res=$(./runner -n rr -s rr-mem-device-scope-device.spv -r rr-results.spv -p params.txt -t rr-mem-device-params.txt -d $device_idx)
+device_used=$(echo "$res" | head -n 1 | sed 's/.*Using device \(.*\)$/\1/')
+echo "$device_used"
+failed=$(echo "$res" | tail -n 1)
+
+if [[ "$failed" == "Violations detected!" ]]; then
+  echo "got em"
+  if [ ! -d "results/$device_used" ] ; then
+    mkdir "results/$device_used"
+  fi
+fi
+
 
 
 

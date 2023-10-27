@@ -13,33 +13,21 @@ using namespace std;
 using namespace easyvk;
 
 /** Returns the GPU to use for this test run. Users can specify the specific GPU to use
- *  with the 'gpuDeviceId' parameter. If gpuDeviceId is not included in the parameters or the specified
- *  device cannot be found, the first device is used.
+ *  with the a device index parameter. If the index is too large, an error is returned.
  */
-Device getDevice(Instance &instance, int device_id) {
-  int idx = 0;
-  int j = 0;
-  auto physicalDevices = instance.physicalDevices();
-  for (auto physicalDevice : physicalDevices) {
-    Device _device = Device(instance, physicalDevice);
-    if (_device.properties.deviceID == device_id) {
-      idx = j;
-      _device.teardown();
-      break;
-    }
-    _device.teardown();
-    j++;
-  }
-  Device device = Device(instance, physicalDevices.at(idx));
+Device getDevice(Instance &instance, int device_idx) {
+  Device device = Device(instance, instance.physicalDevices().at(device_idx));
   cout << "Using device " << device.properties.deviceName << "\n";
   return device;
 }
 
 void listDevices() {
   auto instance = Instance(false);
+  int i = 0;
   for (auto physicalDevice : instance.physicalDevices()) {
     Device device = Device(instance, physicalDevice);
-    cout << "Device: " << device.properties.deviceName << " ID: " << device.properties.deviceID << "\n";
+    cout << "Device: " << device.properties.deviceName << " ID: " << device.properties.deviceID << " Index: " << i << "\n";
+    i++;
   }
 }
 
@@ -286,7 +274,7 @@ int main(int argc, char *argv[])
   string stressParamsFile;
   string testParamsFile;
   string testName;
-  int deviceID = 0;
+  int deviceIndex = 0;
   bool enableValidationLayers = false;
   bool list_devices = false;
 
@@ -315,7 +303,7 @@ int main(int argc, char *argv[])
       list_devices = true;
       break;
     case 'd':
-      deviceID = atoi(optarg);
+      deviceIndex = atoi(optarg);
       break;
     case '?':
       if (optopt == 's' || optopt == 'r' || optopt == 'p')
@@ -364,6 +352,6 @@ int main(int argc, char *argv[])
 //    std::cout << key << " = " << value << "; ";
 //  }
 //  std::cout << "\n";
-  run(testName, shaderFile, resultShaderFile, stressParams, testParams, deviceID, enableValidationLayers);
+  run(testName, shaderFile, resultShaderFile, stressParams, testParams, deviceIndex, enableValidationLayers);
   return 0;
 }

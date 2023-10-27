@@ -3,10 +3,11 @@ CXXFLAGS = -std=c++17
 CLSPVFLAGS = -cl-std=CL2.0 -inline-entry-points
 
 SHADERS = $(patsubst %.cl,%.spv,$(wildcard shaders/*/*.cl))
+SOURCE_DIRS = $(wildcard shaders/*)
 
-.PHONY: clean easyvk
+.PHONY: clean easyvk copy_param_files
 
-all: build easyvk runner $(SHADERS)
+all: build easyvk runner $(SHADERS) copy_param_files tuning
 
 build:
 	mkdir -p build
@@ -22,3 +23,13 @@ runner: runner.cpp
 
 %.spv: %.cl
 	clspv -w -cl-std=CL2.0 -inline-entry-points $< -o build/$(notdir $@)
+
+
+copy_param_files:
+	for src_dir in $(SOURCE_DIRS); do \
+		cp $$src_dir/*.txt build; \
+	done
+
+tuning: tune.sh 
+	cp $< build
+

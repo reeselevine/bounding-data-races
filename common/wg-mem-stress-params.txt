@@ -1,11 +1,11 @@
 testIterations=10
-testingWorkgroups=4
-maxWorkgroups=1024
+testingWorkgroups=16
+maxWorkgroups=32
 workgroupSize=128
 shufflePct=100
 barrierPct=100
 scratchMemorySize=2048
-memStride=4
+memStride=1
 memStressPct=100
 memStressIterations=1024
 memStressPattern=2

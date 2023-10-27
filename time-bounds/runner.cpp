@@ -173,7 +173,9 @@ void run(string test_name, string &shader_file, string &result_shader_file, map<
   auto readResults = Buffer(device, test_params["numOutputs"] * testingThreads, sizeof(uint32_t));
   buffers.push_back(readResults);
   resultBuffers.push_back(readResults);
+
   auto testResults = Buffer(device, test_params["numResults"], sizeof(uint32_t));
+
   resultBuffers.push_back(testResults);
   auto shuffledWorkgroups = Buffer(device, stress_params["maxWorkgroups"], sizeof(uint32_t));
   buffers.push_back(shuffledWorkgroups);
@@ -188,9 +190,11 @@ void run(string test_name, string &shader_file, string &result_shader_file, map<
   buffers.push_back(stressParams);
   resultBuffers.push_back(stressParams);
 
+
   // run iterations
   chrono::time_point<std::chrono::system_clock> start, end;
   start = chrono::system_clock::now();
+  bool violationsDetected = false;
   for (int i = 0; i < stress_params["testIterations"]; i++) {
     auto program = Program(device, shader_file.c_str(), buffers);
     auto resultProgram = Program(device, result_shader_file.c_str(), resultBuffers);
@@ -231,16 +235,20 @@ void run(string test_name, string &shader_file, string &result_shader_file, map<
     for (int i = 0; i < test_params["numResults"]; i++) {
       results.push_back(testResults.load<uint32_t>(i));
     }
-    check_results(results, test_name);
+    violationsDetected = check_results(results, test_name) || violationsDetected;
 
 //    for (int i = 0; i < testingThreads; i++) {
 //      if (readResults.load<uint32_t>(i*3 + 1) != readResults.load<uint32_t>(i*3 + 2))
-//        cout << "i: " << i <<  " flag: " << readResults.load<uint32_t>(i*3) << " r0: " << readResults.load<uint32_t>(i*3 + 1) << " r1: " << readResults.load<uint32_t>(i*3 + 2) << "\n";
+//        cout << "i: " << i <<  " flag: " << readResults.load<uint32_t>(i*2) << " r0: " << readResults.load<uint32_t>(i*2 + 1) << " mem: " << buffers[0].load<uint32_t>(i*stress_params["memStride"]) << "\n";
 //    }
 
     program.teardown();
     resultProgram.teardown();
   }
+
+  if (violationsDetected)
+    cout << "Violations detected!\n";
+
   for (Buffer buffer : buffers) {
     buffer.teardown();
   }

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 PARAM_FILE="params.txt"
+RESULT_DIR="results"
 
 # Generate a random number between min and max
 function random_between() {
@@ -41,6 +42,28 @@ function random_config() {
   echo "permuteThread=419" >> $PARAM_FILE
 }
 
+function run_test() {
+  local test=$1
+  local test_mem=$2
+  local test_scope=$3
+  res=$(./runner -n $test -s $test-$test_mem-$test_scope.spv -r $test-results.spv -p $PARAM_FILE -t $test-$test_mem-params.txt -d $device_idx)
+  local device_used=$(echo "$res" | head -n 1 | sed 's/.*Using device \(.*\)$/\1/')
+  local num_violations=$(echo "$res" | tail -n 1 | sed 's/.*of violations: \(.*\)$/\1/')
+  echo "  Test $test-$test_mem-$test_scope violations: $num_violations"
+
+  if [ $num_violations -gt 0 ] ; then
+    if [ ! -d "$RESULT_DIR/$device_used" ] ; then
+      mkdir "$RESULT_DIR/$device_used"
+    fi
+    if [ ! -d "$RESULT_DIR/$device_used/$iter-$test_mem" ] ; then
+      mkdir "$RESULT_DIR/$device_used/$iter-$test_mem"
+      cp $PARAM_FILE "$RESULT_DIR/$device_used/$iter-$test_mem"
+    fi
+    echo "Test: $test-$test_mem-$test_scope violations: $num_violations" >> "$RESULT_DIR/$device_used/$iter-$test_mem/violations.txt"
+  fi
+
+}
+
 if [ $# != 1 ] ; then
   echo "Need to pass device index as first argument"
   exit 1
@@ -48,24 +71,29 @@ fi
 
 device_idx=$1
 
-if [ ! -d results ] ; then
-  mkdir results
+if [ ! -d "$RESULT_DIR" ] ; then
+  mkdir $RESULT_DIR
 fi
 
-random_config 1024 256
+test_names=("rr" "rw" "wr")
+iter=0
 
-res=$(./runner -n rr -s rr-mem-device-scope-device.spv -r rr-results.spv -p params.txt -t rr-mem-device-params.txt -d $device_idx)
-device_used=$(echo "$res" | head -n 1 | sed 's/.*Using device \(.*\)$/\1/')
-echo "$device_used"
-failed=$(echo "$res" | tail -n 1)
+while [ true ]
+do
+  echo "Iteration: $iter"
 
-if [[ "$failed" == "Violations detected!" ]]; then
-  echo "got em"
-  if [ ! -d "results/$device_used" ] ; then
-    mkdir "results/$device_used"
-  fi
-fi
+  # device memory tests
+  random_config 1024 256
+  for test in "${test_names[@]}"; do
+    run_test "$test" "mem-device" "scope-device"
+    run_test "$test" "mem-device" "scope-wg"
+  done
 
+  # workgroup memory tests
+  random_config 16 128 
+  for test in "${test_names[@]}"; do
+    run_test "$test" "mem-wg" "scope-wg"
+  done
 
-
-
+  iter=$((iter + 1))
+done

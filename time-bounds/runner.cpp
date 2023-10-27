@@ -182,7 +182,7 @@ void run(string test_name, string &shader_file, string &result_shader_file, map<
   // run iterations
   chrono::time_point<std::chrono::system_clock> start, end;
   start = chrono::system_clock::now();
-  bool violationsDetected = false;
+  int numViolations = 0;
   for (int i = 0; i < stress_params["testIterations"]; i++) {
     auto program = Program(device, shader_file.c_str(), buffers);
     auto resultProgram = Program(device, result_shader_file.c_str(), resultBuffers);
@@ -223,7 +223,7 @@ void run(string test_name, string &shader_file, string &result_shader_file, map<
     for (int i = 0; i < test_params["numResults"]; i++) {
       results.push_back(testResults.load<uint32_t>(i));
     }
-    violationsDetected = check_results(results, test_name) || violationsDetected;
+    numViolations += check_results(results, test_name);
 
 //    for (int i = 0; i < testingThreads; i++) {
 //      cout << "i: " << i <<  " flag: " << readResults.load<uint32_t>(i*2) << " r0: " << readResults.load<uint32_t>(i*2 + 1) << " mem: " << buffers[0].load<uint32_t>(i*stress_params["memStride"]) << "\n";
@@ -233,8 +233,7 @@ void run(string test_name, string &shader_file, string &result_shader_file, map<
     resultProgram.teardown();
   }
 
-  if (violationsDetected)
-    cout << "Violations detected!\n";
+  cout << "Number of violations: " << numViolations << "\n";
 
   for (Buffer buffer : buffers) {
     buffer.teardown();

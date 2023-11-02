@@ -292,6 +292,7 @@ int main(int argc, char *argv[])
       break;
     case 'p':
       stressParamsFile = optarg;
+      break;
     case 't':
       testParamsFile = optarg;
       break;

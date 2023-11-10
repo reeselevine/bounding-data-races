@@ -49,7 +49,7 @@ __kernel void run_test (
   __local uint* wg_non_atomic_test_locations,
   __local atomic_uint* wg_atomic_test_locations,
   __global uint* non_atomic_test_locations,
-  __global atomic_uint* read_results,
+  __global uint* read_results,
   __global uint* shuffled_workgroups,
   __global atomic_uint* _barrier,
   __global uint* scratchpad,
@@ -85,8 +85,8 @@ __kernel void run_test (
     wg_non_atomic_test_locations[y_1] = 3;
 
     // Store back results for analysis
-    atomic_store(&read_results[(shuffled_workgroup * get_local_size(0) + id_1) * 2], flag);
-    atomic_store(&read_results[(shuffled_workgroup* get_local_size(0) + id_1) * 2 + 1], r0);
+    read_results[(shuffled_workgroup * get_local_size(0) + id_1) * 2] = flag;
+    read_results[(shuffled_workgroup* get_local_size(0) + id_1) * 2 + 1] = r0;
     non_atomic_test_locations[shuffled_workgroup * get_local_size(0) * stress_params[10] + x_1] = wg_non_atomic_test_locations[y_1];
   } else if (stress_params[1]) {
     do_stress(scratchpad, scratch_locations, stress_params[2], stress_params[3]);

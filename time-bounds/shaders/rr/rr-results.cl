@@ -22,17 +22,17 @@ __kernel void check_results (
     atomic_fetch_add(&test_results->seq0, 1);
   } else if (flag == 0 && r0 == 2 && r1 == 2) {
      atomic_fetch_add(&test_results->seq1, 1);
-  } else if (flag == 1 && r0 == 1 & r1 == 1) {
+  } else if (flag == 1 && r0 == 1 && r1 == 1) {
      atomic_fetch_add(&test_results->interleaved0, 1);
-  } else if (flag == 0 && r0 == 1 & r1 == 1) {
+  } else if (flag == 0 && r0 == 1 && r1 == 1) {
       atomic_fetch_add(&test_results->interleaved1, 1);
-  } else if (flag == 0 && r0 == 2 & r1 == 1) {
+  } else if (flag == 0 && r0 == 2 && r1 == 1) {
       atomic_fetch_add(&test_results->racy0, 1);
-  } else if (flag == 0 && r0 == 1 & r1 == 2) {
+  } else if (flag == 0 && r0 == 1 && r1 == 2) {
       atomic_fetch_add(&test_results->racy1, 1);
-  } else if (flag == 1 && r0 == 2 & r1 == 1) {
+  } else if (flag == 1 && r0 == 2 && r1 == 1) {
       atomic_fetch_add(&test_results->not_bound0, 1);
-  } else if (flag == 1 && r0 == 1 & r1 == 2) {
+  } else if (flag == 1 && r0 == 1 && r1 == 2) {
       atomic_fetch_add(&test_results->not_bound1, 1);
   } else {
     atomic_fetch_add(&test_results->other, 1);
